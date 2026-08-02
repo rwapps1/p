@@ -1,0 +1,966 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>My Parkrun Dashboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --pk-orange:#FF6600;
+    --pk-orange-dark:#D95400;
+    --pk-orange-tint:#FFF1E5;
+    --pk-black:#171412;
+    --pk-pink:#E6007E;
+    --pk-pink-dark:#B8005F;
+    --pk-pink-tint:#FCE4F1;
+    --pk-white:#FFFFFF;
+    --pk-grey:#6E6660;
+    --pk-grey-light:#F7F5F3;
+    --pk-border:#EDE7E1;
+    --shadow: 0 2px 10px rgba(23,20,18,0.06);
+    --shadow-lg: 0 12px 32px rgba(23,20,18,0.12);
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    font-family:'Inter',sans-serif;
+    background:var(--pk-grey-light);
+    color:var(--pk-black);
+    -webkit-font-smoothing:antialiased;
+  }
+  h1,h2,h3,.display{font-family:'Poppins',sans-serif;}
+  .app{max-width:1320px;margin:0 auto;padding:0 0 60px;}
+
+  /* ---------- HEADER ---------- */
+  header.topbar{
+    background:var(--pk-orange);
+    color:var(--pk-white);
+    padding:26px 32px;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    flex-wrap:wrap;
+    gap:14px;
+  }
+  .brand{display:flex; align-items:baseline; gap:10px;}
+  .brand .wordmark{
+    font-family:'Poppins',sans-serif;
+    font-weight:800;
+    font-size:30px;
+    letter-spacing:-0.5px;
+    text-transform:lowercase;
+  }
+  .brand .sub{
+    font-size:13px;
+    font-weight:600;
+    letter-spacing:2.5px;
+    text-transform:uppercase;
+    opacity:0.85;
+    border-left:2px solid rgba(255,255,255,0.5);
+    padding-left:10px;
+  }
+  .tagline{font-size:13px; opacity:0.9; font-weight:500;}
+
+  /* ---------- CONTROL BAR ---------- */
+  .control-bar{
+    display:grid;
+    grid-template-columns:1.4fr 1fr;
+    gap:16px;
+    margin:22px 32px 8px;
+  }
+  @media (max-width:760px){ .control-bar{grid-template-columns:1fr;} }
+  .control-card{
+    background:var(--pk-white);
+    border:1px solid var(--pk-border);
+    border-radius:14px;
+    padding:18px 20px;
+    box-shadow:var(--shadow);
+  }
+  .control-card h3{margin:0 0 4px; font-size:14px; letter-spacing:0.3px;}
+  .control-card p.desc{margin:0 0 12px; font-size:12.5px; color:var(--pk-grey);}
+  .dropzone{
+    border:2px dashed #E3B78C;
+    background:var(--pk-orange-tint);
+    border-radius:10px;
+    padding:14px;
+    text-align:center;
+    font-size:13px;
+    font-weight:600;
+    color:var(--pk-orange-dark);
+    cursor:pointer;
+    transition:all .15s ease;
+    display:block;
+  }
+  .dropzone:hover, .dropzone.dragover{background:#FFE4CC; border-color:var(--pk-orange);}
+  .footnote{margin:8px 0 0; font-size:11px; color:var(--pk-grey); line-height:1.4;}
+  .btn-pdf{
+    width:100%;
+    background:var(--pk-black);
+    color:var(--pk-white);
+    border:none;
+    border-radius:10px;
+    padding:14px;
+    font-family:'Inter',sans-serif;
+    font-weight:700;
+    font-size:14px;
+    cursor:pointer;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    gap:8px;
+    transition:background .15s ease;
+  }
+  .btn-pdf:hover{background:#000;}
+  .btn-pdf:disabled{opacity:0.6; cursor:wait;}
+  #uploadStatus{font-size:12px; font-weight:600; margin-top:8px; min-height:14px;}
+  #uploadStatus.ok{color:#1a7f3c;}
+  #uploadStatus.err{color:#c02626;}
+
+  main#dashboard{padding:8px 32px 0;}
+  section{margin-top:34px;}
+  section > h2{
+    font-size:19px;
+    margin:0 0 14px;
+    display:flex;
+    align-items:center;
+    gap:10px;
+  }
+  section > h2 .bar{width:6px;height:20px;background:var(--pk-orange);border-radius:3px;display:inline-block;}
+  section > p.section-sub{margin:-10px 0 16px; font-size:13px; color:var(--pk-grey);}
+
+  /* ---------- HERO STATS ---------- */
+  .hero-stats{
+    display:grid;
+    grid-template-columns:repeat(5,1fr);
+    gap:14px;
+  }
+  @media (max-width:980px){ .hero-stats{grid-template-columns:repeat(2,1fr);} }
+  .stat-tile{
+    background:var(--pk-white);
+    border-radius:14px;
+    padding:18px 16px;
+    border-top:4px solid var(--pk-orange);
+    box-shadow:var(--shadow);
+  }
+  .stat-tile .num{font-family:'Poppins',sans-serif; font-weight:800; font-size:28px; line-height:1.1;}
+  .stat-tile .label{font-size:12px; color:var(--pk-grey); font-weight:600; margin-top:4px; text-transform:uppercase; letter-spacing:0.4px;}
+
+  /* ---------- PB BANNER ---------- */
+  .pb-banner{
+    background:linear-gradient(120deg,var(--pk-pink) 0%, var(--pk-pink-dark) 100%);
+    border-radius:20px;
+    color:var(--pk-white);
+    padding:30px 34px;
+    display:flex;
+    align-items:center;
+    gap:28px;
+    box-shadow:var(--shadow-lg);
+    position:relative;
+    overflow:hidden;
+  }
+  .pb-banner::after{
+    content:"";
+    position:absolute; right:-40px; top:-40px;
+    width:220px;height:220px;border-radius:50%;
+    background:rgba(255,255,255,0.08);
+  }
+  .pb-medal{
+    width:74px;height:74px;flex:0 0 auto;
+    background:rgba(255,255,255,0.16);
+    border-radius:50%;
+    display:flex;align-items:center;justify-content:center;
+    border:2px solid rgba(255,255,255,0.5);
+  }
+  .pb-medal svg{width:38px;height:38px;}
+  .pb-content{position:relative; z-index:1;}
+  .pb-eyebrow{font-size:12px; font-weight:700; letter-spacing:2px; text-transform:uppercase; opacity:0.85; margin-bottom:4px;}
+  .pb-time{font-family:'Poppins',sans-serif; font-weight:800; font-size:52px; line-height:1; letter-spacing:-1px;}
+  .pb-meta{margin-top:8px; font-size:15px; font-weight:500; opacity:0.95;}
+  .pb-meta b{font-weight:700;}
+  .pb-held{
+    margin-left:auto; text-align:right; position:relative; z-index:1;
+    font-size:13px; opacity:0.9; max-width:180px; font-weight:500;
+  }
+  .pb-held b{display:block; font-family:'Poppins',sans-serif; font-size:22px; font-weight:800;}
+  @media (max-width:760px){ .pb-banner{flex-wrap:wrap;} .pb-held{margin-left:0; text-align:left;} }
+
+  /* ---------- GRIDS / CHARTS ---------- */
+  .split-grid{
+    display:grid;
+    grid-template-columns:1.3fr 1fr;
+    gap:20px;
+    align-items:stretch;
+  }
+  @media (max-width:900px){ .split-grid{grid-template-columns:1fr;} }
+  .panel{
+    background:var(--pk-white);
+    border-radius:14px;
+    padding:20px;
+    box-shadow:var(--shadow);
+    border:1px solid var(--pk-border);
+  }
+  .chart-wrap{position:relative; height:300px;}
+  .scroll-panel{ overflow:auto; max-height:340px; }
+
+  table.data-table{width:100%; border-collapse:collapse; font-size:13.5px;}
+  table.data-table th{
+    background:#F3F3F3;
+    color:var(--pk-black);
+    text-align:left;
+    padding:9px 10px;
+    font-weight:700;
+    font-size:12px;
+    text-transform:uppercase;
+    letter-spacing:0.3px;
+  }
+  table.data-table td{padding:9px 10px; border-top:1px solid var(--pk-border);}
+  table.data-table tr:hover td{background:var(--pk-orange-tint);}
+  .pill{
+    display:inline-block; padding:2px 9px; border-radius:20px;
+    font-size:11px; font-weight:700;
+  }
+  .pill.best{background:var(--pk-pink-tint); color:var(--pk-pink-dark);}
+
+  /* ---------- LOCATION CARDS ---------- */
+  .cards-grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fit, minmax(210px,1fr));
+    gap:14px;
+    margin-top:16px;
+  }
+  .loc-card{
+    background:var(--pk-white);
+    border:1px solid var(--pk-border);
+    border-radius:14px;
+    padding:16px 18px;
+    box-shadow:var(--shadow);
+  }
+  .loc-card .loc-name{font-family:'Poppins',sans-serif; font-weight:700; font-size:15px; margin-bottom:10px; display:flex; justify-content:space-between; align-items:center;}
+  .loc-card .loc-count{background:var(--pk-orange); color:#fff; font-size:11px; font-weight:800; padding:2px 9px; border-radius:20px;}
+  .loc-row{display:flex; justify-content:space-between; font-size:12.5px; padding:3px 0; color:var(--pk-grey);}
+  .loc-row b{color:var(--pk-black); font-weight:700;}
+
+  /* ---------- TIMELINE ---------- */
+  .timeline{position:relative; padding-left:20px; margin-top:6px;}
+  .timeline::before{content:""; position:absolute; left:5px; top:4px; bottom:4px; width:2px; background:var(--pk-border);}
+  .tl-item{position:relative; padding:0 0 18px 18px;}
+  .tl-item::before{
+    content:""; position:absolute; left:-1px; top:3px;
+    width:11px; height:11px; border-radius:50%;
+    background:var(--pk-pink); border:2px solid var(--pk-white); box-shadow:0 0 0 2px var(--pk-pink);
+  }
+  .tl-item .tl-time{font-family:'Poppins',sans-serif; font-weight:800; font-size:16px;}
+  .tl-item .tl-meta{font-size:12.5px; color:var(--pk-grey);}
+
+  /* ---------- MILESTONES ---------- */
+  .milestone-row{display:flex; gap:16px; flex-wrap:wrap; margin-top:10px;}
+  .milestone-badge{
+    width:110px; height:110px; border-radius:50%;
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    font-family:'Poppins',sans-serif;
+    border:3px solid var(--pk-border);
+    color:var(--pk-grey);
+    background:var(--pk-white);
+  }
+  .milestone-badge .m-num{font-weight:800; font-size:22px;}
+  .milestone-badge .m-label{font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:0.5px;}
+  .milestone-badge.achieved{
+    background:linear-gradient(135deg,var(--pk-pink),var(--pk-pink-dark));
+    border-color:var(--pk-pink-dark);
+    color:#fff;
+  }
+  .milestone-badge.next{
+    border-color:var(--pk-orange);
+    color:var(--pk-orange-dark);
+    background:var(--pk-orange-tint);
+  }
+  .milestone-note{font-size:13px; color:var(--pk-grey); margin-top:12px;}
+
+  /* ---------- EXTRA STATS ---------- */
+  .extra-card{
+    background:var(--pk-white);
+    border:1px solid var(--pk-border);
+    border-radius:14px;
+    padding:16px 18px;
+    box-shadow:var(--shadow);
+  }
+  .extra-card .e-label{font-size:11.5px; color:var(--pk-grey); font-weight:700; text-transform:uppercase; letter-spacing:0.3px;}
+  .extra-card .e-value{font-family:'Poppins',sans-serif; font-weight:700; font-size:19px; margin-top:4px;}
+  .extra-card .e-sub{font-size:12px; color:var(--pk-grey); margin-top:2px;}
+
+  footer.pagefoot{
+    text-align:center;
+    color:var(--pk-grey);
+    font-size:11.5px;
+    margin-top:40px;
+    padding:0 32px;
+  }
+
+  /* hide during PDF capture */
+  body.pdf-capturing .control-bar{display:none !important;}
+  /* In the PDF only: stack the chart above the full list instead of side-by-side + scrolling,
+     so every location/year shows regardless of how many there are. On-screen layout is untouched. */
+  body.pdf-capturing #yearlySplit,
+  body.pdf-capturing #locationSplit{
+    grid-template-columns: 1fr !important;
+  }
+  body.pdf-capturing .scroll-panel{
+    max-height: none !important;
+    overflow: visible !important;
+  }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <header class="topbar">
+    <div class="brand">
+      <span class="wordmark">parkrun</span>
+      <span class="sub">my dashboard</span>
+    </div>
+    <div class="tagline">Every run, every course, every personal best — in one place.</div>
+  </header>
+
+  <div class="control-bar">
+    <div class="control-card">
+      <h3>Upload a new sheet</h3>
+      <p class="desc">Replace the data below with an updated spreadsheet. The dashboard will refresh automatically.</p>
+      <input type="file" id="fileInput" accept=".xlsx,.xls,.csv" hidden>
+      <label for="fileInput" class="dropzone" id="dropzone">Click to choose a file, or drop it here</label>
+      <p id="uploadStatus"></p>
+      <p class="footnote">Your sheet must only include columns for location, date, run time and personal best.</p>
+    </div>
+    <div class="control-card">
+      <h3>Download this dashboard</h3>
+      <p class="desc">Save a full-colour, landscape PDF copy of everything below.</p>
+      <button class="btn-pdf" id="btnPdf">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="M7 10l5 5 5-5"/><path d="M4 20h16"/></svg>
+        Download as PDF
+      </button>
+      <p id="pdfStatus" style="font-size:12px; font-weight:600; margin:8px 0 0; min-height:14px;"></p>
+    </div>
+  </div>
+
+  <main id="dashboard">
+
+    <section id="sec-hero">
+      <div class="hero-stats" id="heroStats"></div>
+    </section>
+
+    <section id="sec-pb">
+      <div class="pb-banner">
+        <div class="pb-medal">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.8"><circle cx="12" cy="14" r="7"/><path d="M9 8.5L7 3h2l3 5 3-5h2l-2 5.5" fill="rgba(255,255,255,0.25)" stroke="#fff"/><path d="M9.5 14.5l1.7 1.7 3.3-3.7" stroke="#fff" stroke-width="1.6"/></svg>
+        </div>
+        <div class="pb-content">
+          <div class="pb-eyebrow">All-time personal best</div>
+          <div class="pb-time" id="pbTime">--:--</div>
+          <div class="pb-meta" id="pbMeta">Loading…</div>
+        </div>
+        <div class="pb-held" id="pbHeld"></div>
+      </div>
+    </section>
+
+    <section id="sec-yearly">
+      <h2><span class="bar"></span>Yearly Best Times</h2>
+      <p class="section-sub">Your fastest time each year, plus how much ground you covered.</p>
+      <div class="split-grid" id="yearlySplit">
+        <div class="panel"><div class="chart-wrap"><canvas id="yearlyChart"></canvas></div></div>
+        <div class="panel scroll-panel">
+          <table class="data-table" id="yearlyTable"></table>
+        </div>
+      </div>
+    </section>
+
+    <section id="sec-location">
+      <h2><span class="bar"></span>Location Breakdown</h2>
+      <p class="section-sub">Where you've run, how often, and your best at each course.</p>
+      <div class="split-grid" id="locationSplit">
+        <div class="panel"><div class="chart-wrap"><canvas id="locationChart"></canvas></div></div>
+        <div class="panel scroll-panel">
+          <div class="cards-grid" id="locationCards" style="margin-top:0;"></div>
+        </div>
+      </div>
+    </section>
+
+    <section id="sec-pbtimeline">
+      <h2><span class="bar"></span>Personal Best Timeline</h2>
+      <p class="section-sub">Every run flagged as a PB in your sheet, in order.</p>
+      <div class="panel">
+        <div class="timeline" id="pbTimeline"></div>
+      </div>
+    </section>
+
+    <section id="sec-milestones">
+      <h2><span class="bar"></span>Milestones</h2>
+      <div class="panel">
+        <div class="milestone-row" id="milestoneRow"></div>
+        <p class="milestone-note" id="milestoneNote"></p>
+      </div>
+    </section>
+
+    <section id="sec-extra">
+      <h2><span class="bar"></span>More Stats</h2>
+      <div class="cards-grid" id="extraStats"></div>
+    </section>
+
+  </main>
+
+  <footer class="pagefoot" id="pageFoot"></footer>
+</div>
+
+<script>
+/* ===================== LIBRARY LOADER (with fallback CDN) ===================== */
+function loadScriptFrom(urls){
+  return new Promise((resolve, reject)=>{
+    let i = 0;
+    function tryNext(){
+      if(i >= urls.length){ reject(new Error('Could not load from any source')); return; }
+      const s = document.createElement('script');
+      s.src = urls[i++];
+      s.onload = () => resolve();
+      s.onerror = () => tryNext();
+      document.head.appendChild(s);
+    }
+    tryNext();
+  });
+}
+function ensureChart(){
+  if(window.Chart) return Promise.resolve();
+  if(!window.__chartLoad) window.__chartLoad = loadScriptFrom([
+    'https://cdnjs.cloudflare.com/ajax/libs/chart.js/4.4.4/chart.umd.min.js',
+    'https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js'
+  ]);
+  return window.__chartLoad;
+}
+function ensureXLSX(){
+  if(window.XLSX) return Promise.resolve();
+  if(!window.__xlsxLoad) window.__xlsxLoad = loadScriptFrom([
+    'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js',
+    'https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js'
+  ]);
+  return window.__xlsxLoad;
+}
+function ensurePdfLibs(){
+  if(window.jspdf && window.html2canvas) return Promise.resolve();
+  if(!window.__pdfLoad) window.__pdfLoad = Promise.all([
+    (window.html2canvas ? Promise.resolve() : loadScriptFrom([
+      'https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js',
+      'https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js'
+    ])),
+    (window.jspdf ? Promise.resolve() : loadScriptFrom([
+      'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js',
+      'https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js'
+    ]))
+  ]);
+  return window.__pdfLoad;
+}
+
+/* ===================== DATA ===================== */
+let RAW_DATA = [{"location": "Barnsley", "date": "2018-09-22", "seconds": 2100, "pb": false}, {"location": "Barnsley", "date": "2018-09-29", "seconds": 1954, "pb": true}, {"location": "Barnsley", "date": "2018-10-06", "seconds": 1926, "pb": true}, {"location": "Barnsley", "date": "2018-10-13", "seconds": 1949, "pb": false}, {"location": "Barnsley", "date": "2018-10-20", "seconds": 1858, "pb": true}, {"location": "Barnsley", "date": "2018-11-03", "seconds": 1918, "pb": false}, {"location": "Barnsley", "date": "2018-11-10", "seconds": 1909, "pb": false}, {"location": "Barnsley", "date": "2018-11-17", "seconds": 1909, "pb": false}, {"location": "Barnsley", "date": "2018-12-08", "seconds": 1863, "pb": false}, {"location": "Barnsley", "date": "2018-12-15", "seconds": 1864, "pb": false}, {"location": "Barnsley", "date": "2018-12-22", "seconds": 1848, "pb": true}, {"location": "Barnsley", "date": "2018-12-25", "seconds": 1839, "pb": true}, {"location": "Barnsley", "date": "2018-12-29", "seconds": 1813, "pb": true}, {"location": "Barnsley", "date": "2019-01-05", "seconds": 1784, "pb": true}, {"location": "Barnsley", "date": "2019-02-16", "seconds": 1908, "pb": false}, {"location": "Barnsley", "date": "2019-02-23", "seconds": 1876, "pb": false}, {"location": "Barnsley", "date": "2019-03-02", "seconds": 1952, "pb": false}, {"location": "Barnsley", "date": "2019-03-30", "seconds": 1749, "pb": true}, {"location": "Barnsley", "date": "2019-04-20", "seconds": 1862, "pb": false}, {"location": "Barnsley", "date": "2019-07-06", "seconds": 2018, "pb": false}, {"location": "Barnsley", "date": "2019-07-13", "seconds": 1954, "pb": false}, {"location": "Barnsley", "date": "2019-08-10", "seconds": 2187, "pb": false}, {"location": "Barnsley", "date": "2019-08-17", "seconds": 1993, "pb": false}, {"location": "Wakefield Thornes", "date": "2019-09-07", "seconds": 1754, "pb": false}, {"location": "Barnsley", "date": "2019-10-05", "seconds": 1972, "pb": false}, {"location": "Barnsley", "date": "2019-11-16", "seconds": 2057, "pb": false}, {"location": "Barnsley", "date": "2019-11-30", "seconds": 1967, "pb": false}, {"location": "Barnsley", "date": "2019-12-14", "seconds": 2003, "pb": false}, {"location": "Barnsley", "date": "2019-12-21", "seconds": 1913, "pb": false}, {"location": "Barnsley", "date": "2019-12-25", "seconds": 2031, "pb": false}, {"location": "Barnsley", "date": "2019-12-28", "seconds": 1943, "pb": false}, {"location": "Barnsley", "date": "2020-01-01", "seconds": 1877, "pb": false}, {"location": "Barnsley", "date": "2020-01-04", "seconds": 1867, "pb": false}, {"location": "Barnsley", "date": "2020-01-11", "seconds": 2196, "pb": false}, {"location": "Barnsley", "date": "2020-01-25", "seconds": 1849, "pb": false}, {"location": "Barnsley", "date": "2020-02-15", "seconds": 1971, "pb": false}, {"location": "Barnsley", "date": "2020-03-07", "seconds": 1942, "pb": false}, {"location": "Barnsley", "date": "2021-07-24", "seconds": 2123, "pb": false}, {"location": "Barnsley", "date": "2021-08-07", "seconds": 2059, "pb": false}, {"location": "Barnsley", "date": "2021-08-21", "seconds": 2044, "pb": false}, {"location": "Barnsley", "date": "2021-08-28", "seconds": 1956, "pb": false}, {"location": "Barnsley", "date": "2021-09-04", "seconds": 1933, "pb": false}, {"location": "Barnsley", "date": "2021-09-25", "seconds": 2011, "pb": false}, {"location": "Barnsley", "date": "2021-10-02", "seconds": 1986, "pb": false}, {"location": "Barnsley", "date": "2021-10-30", "seconds": 1889, "pb": false}, {"location": "Barnsley", "date": "2021-11-13", "seconds": 1892, "pb": false}, {"location": "Barnsley", "date": "2021-11-20", "seconds": 1865, "pb": false}, {"location": "Barnsley", "date": "2021-12-04", "seconds": 1965, "pb": false}, {"location": "Barnsley", "date": "2021-12-11", "seconds": 1888, "pb": false}, {"location": "Barnsley", "date": "2021-12-18", "seconds": 1865, "pb": false}, {"location": "Barnsley", "date": "2021-12-25", "seconds": 1843, "pb": false}, {"location": "Barnsley", "date": "2022-01-01", "seconds": 1857, "pb": false}, {"location": "Barnsley", "date": "2022-01-29", "seconds": 1862, "pb": false}, {"location": "Barnsley", "date": "2022-02-05", "seconds": 1826, "pb": false}, {"location": "Barnsley", "date": "2022-02-12", "seconds": 1819, "pb": false}, {"location": "Temple Newsam", "date": "2022-03-05", "seconds": 1990, "pb": false}, {"location": "Barnsley", "date": "2022-03-12", "seconds": 1858, "pb": false}, {"location": "Temple Newsam", "date": "2022-03-19", "seconds": 1812, "pb": true}, {"location": "Barnsley", "date": "2022-03-26", "seconds": 1822, "pb": false}, {"location": "Barnsley", "date": "2022-05-28", "seconds": 1996, "pb": false}, {"location": "Barnsley", "date": "2022-06-11", "seconds": 1984, "pb": false}, {"location": "Barnsley", "date": "2022-06-18", "seconds": 1952, "pb": false}, {"location": "Barnsley", "date": "2022-07-02", "seconds": 1929, "pb": false}, {"location": "Barnsley", "date": "2022-08-06", "seconds": 1952, "pb": false}, {"location": "Barnsley", "date": "2022-08-20", "seconds": 1992, "pb": false}, {"location": "Barnsley", "date": "2022-08-27", "seconds": 1945, "pb": false}, {"location": "Barnsley", "date": "2022-09-03", "seconds": 1987, "pb": false}, {"location": "Barnsley", "date": "2022-09-17", "seconds": 1931, "pb": false}, {"location": "Barnsley", "date": "2022-10-01", "seconds": 2302, "pb": false}, {"location": "Barnsley", "date": "2022-10-15", "seconds": 1956, "pb": false}, {"location": "Barnsley", "date": "2022-11-12", "seconds": 1915, "pb": false}, {"location": "Barnsley", "date": "2022-12-31", "seconds": 1943, "pb": false}, {"location": "Barnsley", "date": "2023-02-04", "seconds": 1906, "pb": false}, {"location": "Barnsley", "date": "2023-09-02", "seconds": 1978, "pb": false}, {"location": "Barnsley", "date": "2023-09-16", "seconds": 1975, "pb": false}, {"location": "Barnsley", "date": "2024-07-20", "seconds": 2100, "pb": false}, {"location": "Barnsley", "date": "2024-08-03", "seconds": 2025, "pb": false}, {"location": "Temple Newsam", "date": "2024-08-17", "seconds": 2034, "pb": false}, {"location": "Barnsley", "date": "2025-07-05", "seconds": 1988, "pb": false}, {"location": "Roundhay", "date": "2026-04-11", "seconds": 2004, "pb": false}, {"location": "Barnsley", "date": "2026-04-25", "seconds": 2066, "pb": false}, {"location": "Barnsley", "date": "2026-05-09", "seconds": 1923, "pb": false}, {"location": "Barnsley", "date": "2026-05-23", "seconds": 1961, "pb": false}, {"location": "Barnsley", "date": "2026-06-06", "seconds": 1868, "pb": false}, {"location": "Hillsborough", "date": "2026-07-04", "seconds": 1827, "pb": false}, {"location": "Waverley Lakes", "date": "2026-08-01", "seconds": 1912, "pb": false}];
+
+let yearlyChartInstance = null;
+let locationChartInstance = null;
+const PALETTE = ['#FF6600','#171412','#E6007E','#2E86AB','#4CAF77','#8E5CBB','#C77B2E','#3E7CB1'];
+
+/* ===================== HELPERS ===================== */
+function mmss(totalSeconds){
+  const m = Math.floor(totalSeconds/60);
+  const s = Math.round(totalSeconds%60);
+  return m + ':' + String(s).padStart(2,'0');
+}
+function fmtDate(d){
+  return d.toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'});
+}
+function fmtDurationHM(totalSeconds){
+  const h = Math.floor(totalSeconds/3600);
+  const m = Math.round((totalSeconds%3600)/60);
+  return h + 'h ' + m + 'm';
+}
+function daysBetween(a,b){ return Math.round((b-a)/86400000); }
+function humanSpan(a,b){
+  const days = daysBetween(a,b);
+  const years = Math.floor(days/365.25);
+  const months = Math.floor((days - years*365.25)/30.44);
+  if(years>0) return years + 'y ' + (months>0? months+'m' : '');
+  if(months>0) return months + ' month' + (months>1?'s':'');
+  return days + ' day' + (days!==1?'s':'');
+}
+
+/* ===================== STATS ENGINE ===================== */
+function computeStats(data){
+  const runs = data.map(d => ({...d, dateObj:new Date(d.date+'T00:00:00')}))
+                   .sort((a,b)=>a.dateObj-b.dateObj);
+
+  const totalRuns = runs.length;
+  const totalKm = totalRuns * 5;
+  const totalSeconds = runs.reduce((s,r)=>s+r.seconds,0);
+
+  // overall best
+  let overallBest = runs[0];
+  runs.forEach(r => { if(r.seconds < overallBest.seconds) overallBest = r; });
+
+  // locations
+  const locMap = {};
+  runs.forEach(r=>{
+    if(!locMap[r.location]) locMap[r.location] = {location:r.location, count:0, best:null, totalSeconds:0};
+    const L = locMap[r.location];
+    L.count++;
+    L.totalSeconds += r.seconds;
+    if(!L.best || r.seconds < L.best.seconds) L.best = r;
+  });
+  const locations = Object.values(locMap).sort((a,b)=>b.count-a.count);
+
+  // years
+  const yearMap = {};
+  runs.forEach(r=>{
+    const y = r.dateObj.getFullYear();
+    if(!yearMap[y]) yearMap[y] = {year:y, count:0, best:null, totalSeconds:0};
+    const Y = yearMap[y];
+    Y.count++;
+    Y.totalSeconds += r.seconds;
+    if(!Y.best || r.seconds < Y.best.seconds) Y.best = r;
+  });
+  const years = Object.values(yearMap).sort((a,b)=>a.year-b.year);
+
+  const mostVisited = locations[0];
+  const firstRun = runs[0];
+  const lastRun = runs[runs.length-1];
+
+  // longest gap
+  let longestGap = {days:0, from:null, to:null};
+  for(let i=1;i<runs.length;i++){
+    const gap = daysBetween(runs[i-1].dateObj, runs[i].dateObj);
+    if(gap > longestGap.days) longestGap = {days:gap, from:runs[i-1], to:runs[i]};
+  }
+
+  // pb flagged entries
+  const pbEntries = runs.filter(r=>r.pb);
+
+  // fastest year (by best single time)
+  let fastestYear = years[0];
+  years.forEach(y=>{ if(y.best.seconds < fastestYear.best.seconds) fastestYear = y; });
+
+  const avgSeconds = totalSeconds/totalRuns;
+
+  return {runs, totalRuns, totalKm, totalSeconds, overallBest, locations, years,
+          mostVisited, firstRun, lastRun, longestGap, pbEntries, fastestYear, avgSeconds};
+}
+
+/* ===================== RENDER ===================== */
+function renderAll(data){
+  const S = computeStats(data);
+
+  // ---- Hero stats ----
+  const hero = document.getElementById('heroStats');
+  hero.innerHTML = '';
+  const tiles = [
+    ['Total Parkruns', S.totalRuns],
+    ['Total Distance', S.totalKm + ' km'],
+    ['Total Time Run', fmtDurationHM(S.totalSeconds)],
+    ['Locations Visited', S.locations.length],
+    ['Average Time', mmss(S.avgSeconds)]
+  ];
+  tiles.forEach(([label,num])=>{
+    const el = document.createElement('div');
+    el.className = 'stat-tile';
+    el.innerHTML = `<div class="num">${num}</div><div class="label">${label}</div>`;
+    hero.appendChild(el);
+  });
+
+  // ---- PB banner ----
+  document.getElementById('pbTime').textContent = mmss(S.overallBest.seconds);
+  document.getElementById('pbMeta').innerHTML =
+    `<b>${S.overallBest.location}</b> &nbsp;•&nbsp; ${fmtDate(S.overallBest.dateObj)}`;
+  const heldSpan = humanSpan(S.overallBest.dateObj, S.lastRun.dateObj);
+  document.getElementById('pbHeld').innerHTML =
+    S.overallBest === S.lastRun ? 'Set on your<br>most recent run' : `<b>${heldSpan}</b>held and counting`;
+
+  // ---- Yearly chart + table ----
+  const yLabels = S.years.map(y=>y.year);
+  const yBestMins = S.years.map(y=>y.best.seconds/60);
+  const yCounts = S.years.map(y=>y.count);
+
+  (async () => {
+  try{
+  await ensureChart();
+  if(yearlyChartInstance) yearlyChartInstance.destroy();
+  yearlyChartInstance = new Chart(document.getElementById('yearlyChart'), {
+    data: {
+      labels: yLabels,
+      datasets: [
+        {
+          type:'bar', label:'Runs that year', data:yCounts,
+          backgroundColor:'#FFD9B3', yAxisID:'y1', borderRadius:6, order:2
+        },
+        {
+          type:'line', label:'Best time (min)', data:yBestMins,
+          borderColor:'#E6007E', backgroundColor:'#E6007E',
+          pointRadius:5, pointBackgroundColor:'#E6007E', tension:0.25,
+          yAxisID:'y', order:1
+        }
+      ]
+    },
+    options: {
+      responsive:true, maintainAspectRatio:false,
+      interaction:{mode:'index', intersect:false},
+      plugins:{
+        legend:{position:'bottom', labels:{boxWidth:12, font:{size:11}}},
+        tooltip:{callbacks:{
+          label: function(ctx){
+            if(ctx.dataset.label === 'Best time (min)'){
+              const yearObj = S.years[ctx.dataIndex];
+              return 'Best: ' + mmss(yearObj.best.seconds) + ' (' + yearObj.best.location + ')';
+            }
+            return ctx.dataset.label + ': ' + ctx.raw;
+          }
+        }}
+      },
+      scales:{
+        y:{ position:'left', title:{display:true, text:'Best time (min)'}, reverse:false },
+        y1:{ position:'right', grid:{drawOnChartArea:false}, title:{display:true, text:'Runs'}, beginAtZero:true }
+      }
+    }
+  });
+  }catch(chartErr){ console.warn('Yearly chart could not render:', chartErr); }
+  })();
+
+  const yTable = document.getElementById('yearlyTable');
+  yTable.innerHTML = `<thead><tr><th>Year</th><th>Runs</th><th>Best</th><th>Km</th></tr></thead>` +
+    '<tbody>' + S.years.slice().reverse().map(y=>{
+      const isPBYear = y.best.seconds === S.overallBest.seconds;
+      return `<tr><td><b>${y.year}</b></td><td>${y.count}</td>
+        <td>${mmss(y.best.seconds)} ${isPBYear?'<span class="pill best">PB YEAR</span>':''}</td>
+        <td>${y.count*5} km</td></tr>`;
+    }).join('') + '</tbody>';
+
+  // ---- Location chart + cards ----
+  const locLabels = S.locations.map(l=>l.location);
+  const locCounts = S.locations.map(l=>l.count);
+
+  (async () => {
+  try{
+  await ensureChart();
+  if(locationChartInstance) locationChartInstance.destroy();
+  locationChartInstance = new Chart(document.getElementById('locationChart'), {
+    type:'bar',
+    data:{
+      labels: locLabels,
+      datasets:[{
+        label:'Runs', data:locCounts,
+        backgroundColor: locLabels.map((_,i)=>PALETTE[i % PALETTE.length]),
+        borderRadius:6
+      }]
+    },
+    options:{
+      indexAxis:'y',
+      responsive:true, maintainAspectRatio:false,
+      plugins:{ legend:{display:false},
+        tooltip:{callbacks:{
+          label: function(ctx){
+            const l = S.locations[ctx.dataIndex];
+            return `${l.count} runs • best ${mmss(l.best.seconds)}`;
+          }
+        }}
+      },
+      scales:{ x:{ beginAtZero:true, title:{display:true, text:'Number of runs'} } }
+    }
+  });
+  }catch(chartErr){ console.warn('Location chart could not render:', chartErr); }
+  })();
+
+  const locCards = document.getElementById('locationCards');
+  locCards.innerHTML = '';
+  S.locations.forEach(l=>{
+    const el = document.createElement('div');
+    el.className = 'loc-card';
+    el.innerHTML = `
+      <div class="loc-name">${l.location} <span class="loc-count">${l.count}</span></div>
+      <div class="loc-row"><span>Best time</span><b>${mmss(l.best.seconds)}</b></div>
+      <div class="loc-row"><span>Best date</span><b>${fmtDate(l.best.dateObj)}</b></div>
+      <div class="loc-row"><span>Distance</span><b>${l.count*5} km</b></div>
+    `;
+    locCards.appendChild(el);
+  });
+
+  // ---- PB timeline ----
+  const tl = document.getElementById('pbTimeline');
+  if(S.pbEntries.length === 0){
+    tl.innerHTML = '<p style="color:var(--pk-grey); font-size:13px;">No runs are flagged as a PB in the uploaded sheet.</p>';
+  } else {
+    tl.innerHTML = S.pbEntries.map(p=>`
+      <div class="tl-item">
+        <div class="tl-time">${mmss(p.seconds)}</div>
+        <div class="tl-meta">${p.location} • ${fmtDate(p.dateObj)}</div>
+      </div>
+    `).join('');
+  }
+
+  // ---- Milestones ----
+  const thresholds = [50,100,250,500,1000];
+  const mRow = document.getElementById('milestoneRow');
+  const nextOneGlobal = thresholds.find(x=>S.totalRuns<x);
+  mRow.innerHTML = thresholds.map(t=>{
+    const achieved = S.totalRuns >= t;
+    const cls = achieved ? 'achieved' : (t===nextOneGlobal ? 'next' : '');
+    return `<div class="milestone-badge ${cls}">
+      <div class="m-num">${t}</div>
+      <div class="m-label">${achieved?'Achieved':'Club'}</div>
+    </div>`;
+  }).join('');
+  const nextMilestone = thresholds.find(x=>S.totalRuns<x);
+  document.getElementById('milestoneNote').textContent = nextMilestone
+    ? `${nextMilestone - S.totalRuns} more run${(nextMilestone-S.totalRuns)!==1?'s':''} to reach the ${nextMilestone} club.`
+    : `You've passed every standard milestone club — ${S.totalRuns} runs and counting!`;
+
+  // ---- Extra stats ----
+  const extra = document.getElementById('extraStats');
+  const items = [
+    ['First Parkrun', fmtDate(S.firstRun.dateObj), S.firstRun.location],
+    ['Most Recent', fmtDate(S.lastRun.dateObj), S.lastRun.location],
+    ['Most Visited Course', S.mostVisited.location, S.mostVisited.count + ' runs'],
+    ['Fastest Year', S.fastestYear.year, 'Best: ' + mmss(S.fastestYear.best.seconds)],
+    ['Longest Gap Between Runs', S.longestGap.days + ' days', S.longestGap.to ? (fmtDate(S.longestGap.from.dateObj)+' → '+fmtDate(S.longestGap.to.dateObj)) : ''],
+    ['PBs Logged', S.pbEntries.length, 'as flagged in your sheet'],
+  ];
+  extra.innerHTML = '';
+  items.forEach(([label,value,sub])=>{
+    const el = document.createElement('div');
+    el.className = 'extra-card';
+    el.innerHTML = `<div class="e-label">${label}</div><div class="e-value">${value}</div><div class="e-sub">${sub||''}</div>`;
+    extra.appendChild(el);
+  });
+
+  document.getElementById('pageFoot').textContent =
+    `Dashboard covers ${S.totalRuns} parkruns from ${fmtDate(S.firstRun.dateObj)} to ${fmtDate(S.lastRun.dateObj)}. Generated ${fmtDate(new Date())}.`;
+}
+
+/* ===================== FILE PARSING ===================== */
+function decodeTimeFromSerial(serial){
+  const totalRaw = Math.round(serial * 86400);
+  const plausible = v => v >= 300 && v <= 10800; // 5 min – 3 hr
+  const direct = totalRaw;
+  if(plausible(direct)) return direct;
+  const H = Math.floor(totalRaw/3600);
+  const rem = totalRaw % 3600;
+  const M = Math.floor(rem/60);
+  const decoded = H*60 + M;
+  if(plausible(decoded)) return decoded;
+  return direct; // fallback best guess
+}
+function decodeTimeFromString(str){
+  const parts = str.split(':').map(p=>parseInt(p,10));
+  if(parts.some(isNaN)) return null;
+  if(parts.length === 2){
+    return parts[0]*60 + parts[1];
+  }
+  if(parts.length === 3){
+    const direct = parts[0]*3600 + parts[1]*60 + parts[2];
+    const plausible = v => v >= 300 && v <= 10800;
+    if(plausible(direct)) return direct;
+    const decoded = parts[0]*60 + parts[1];
+    if(plausible(decoded)) return decoded;
+    return direct;
+  }
+  return null;
+}
+function excelSerialToDate(serial){
+  const utcDays = Math.floor(serial - 25569);
+  const utcMs = utcDays * 86400 * 1000;
+  return new Date(utcMs);
+}
+function parseDateCell(val){
+  if(typeof val === 'number') return excelSerialToDate(val);
+  if(val instanceof Date) return val;
+  if(typeof val === 'string'){
+    const s = val.trim();
+    // Ambiguous slash/dash date like 08/01/2026 — assume UK day/month/year rather than US month/day/year.
+    const ukMatch = s.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2,4})$/);
+    if(ukMatch){
+      let [, dd, mm, yy] = ukMatch;
+      dd = parseInt(dd,10); mm = parseInt(mm,10); yy = parseInt(yy,10);
+      if(yy < 100) yy += 2000;
+      if(mm >= 1 && mm <= 12 && dd >= 1 && dd <= 31){
+        const d = new Date(yy, mm-1, dd);
+        if(!isNaN(d)) return d;
+      }
+    }
+    const d = new Date(s);
+    if(!isNaN(d)) return d;
+  }
+  return null;
+}
+function parseTimeCell(val){
+  if(typeof val === 'number') return decodeTimeFromSerial(val);
+  if(typeof val === 'string' && val.includes(':')) return decodeTimeFromString(val.trim());
+  return null;
+}
+function looksLikeHeaderRow(row){
+  const joined = (row||[]).map(c=>String(c||'').toLowerCase()).join(' ');
+  return joined.includes('location') || joined.includes('date') || joined.includes('race time') || joined.includes('run time');
+}
+
+async function handleFile(file){
+  const statusEl = document.getElementById('uploadStatus');
+  statusEl.className = ''; statusEl.textContent = 'Loading spreadsheet reader…';
+  try{
+    await ensureXLSX();
+  }catch(err){
+    statusEl.className = 'err';
+    statusEl.textContent = 'Could not load the spreadsheet reader — check your internet connection and try again.';
+    return;
+  }
+  statusEl.textContent = 'Reading file…';
+  const reader = new FileReader();
+  reader.onload = function(e){
+    try{
+      const wb = XLSX.read(e.target.result, {type:'array', cellDates:false, raw:true});
+      const ws = wb.Sheets[wb.SheetNames[0]];
+      const rows = XLSX.utils.sheet_to_json(ws, {header:1, raw:true, defval:null});
+      if(!rows.length) throw new Error('Sheet is empty');
+
+      let startIdx = looksLikeHeaderRow(rows[0]) ? 1 : 0;
+      const parsed = [];
+      for(let i=startIdx;i<rows.length;i++){
+        const row = rows[i];
+        if(!row || row.every(c=>c===null || c==='')) continue;
+        const location = row[0] ? String(row[0]).trim() : null;
+        const dateObj = parseDateCell(row[1]);
+        const seconds = parseTimeCell(row[2]);
+        const pbFlag = row[3] !== null && row[3] !== undefined && String(row[3]).trim() !== '';
+        if(!location || !dateObj || seconds === null) continue;
+        parsed.push({
+          location,
+          date: dateObj.toISOString().slice(0,10),
+          seconds,
+          pb: pbFlag
+        });
+      }
+      if(parsed.length === 0) throw new Error('No valid rows found — check the column order (location, date, run time, personal best).');
+
+      RAW_DATA = parsed;
+      renderAll(RAW_DATA);
+      statusEl.className = 'ok';
+      statusEl.textContent = `Loaded ${parsed.length} runs from "${file.name}".`;
+    }catch(err){
+      statusEl.className = 'err';
+      statusEl.textContent = 'Could not read that file: ' + err.message;
+    }
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+document.getElementById('fileInput').addEventListener('change', function(e){
+  if(e.target.files && e.target.files[0]) handleFile(e.target.files[0]);
+});
+const dz = document.getElementById('dropzone');
+dz.addEventListener('dragover', e=>{ e.preventDefault(); dz.classList.add('dragover'); });
+dz.addEventListener('dragleave', ()=> dz.classList.remove('dragover'));
+dz.addEventListener('drop', e=>{
+  e.preventDefault(); dz.classList.remove('dragover');
+  if(e.dataTransfer.files && e.dataTransfer.files[0]) handleFile(e.dataTransfer.files[0]);
+});
+
+/* ===================== PDF EXPORT ===================== */
+function setPdfStatus(msg, kind){
+  const el = document.getElementById('pdfStatus');
+  el.textContent = msg || '';
+  el.style.color = kind === 'err' ? '#c02626' : (kind === 'ok' ? '#1a7f3c' : 'var(--pk-grey)');
+}
+function withTimeout(promise, ms, label){
+  return Promise.race([
+    promise,
+    new Promise((_,reject)=> setTimeout(()=>reject(new Error(label + ' took too long — please try again')), ms))
+  ]);
+}
+
+document.getElementById('btnPdf').addEventListener('click', async function(){
+  const btn = this;
+  const originalHTML = btn.innerHTML;
+  btn.disabled = true;
+  setPdfStatus('');
+  document.body.classList.add('pdf-capturing');
+
+  try{
+    btn.textContent = 'Preparing PDF tools…';
+    await withTimeout(ensurePdfLibs(), 20000, 'Loading PDF tools');
+
+    btn.textContent = 'Capturing dashboard…';
+    // Let the PDF-only layout (full-height lists, stacked charts) reflow and let
+    // Chart.js resize its canvases to the new widths before we snapshot anything.
+    await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
+    await new Promise(r => setTimeout(r, 250));
+
+    const target = document.querySelector('.app');
+    const canvas = await withTimeout(
+      html2canvas(target, {scale:1.5, backgroundColor:'#ffffff', useCORS:true, logging:false}),
+      45000, 'Capturing the dashboard'
+    );
+
+    btn.textContent = 'Building PDF…';
+    const { jsPDF } = window.jspdf;
+
+    // Build the PDF at a given JPEG quality (0-1). Returns {pdf, blob}.
+    function buildAt(quality){
+      const pdf = new jsPDF({orientation:'l', unit:'mm', format:'a4', compress:true});
+      const pageW = pdf.internal.pageSize.getWidth();
+      const pageH = pdf.internal.pageSize.getHeight();
+      // White background so the JPEG encoder has no transparency to worry about.
+      const imgData = canvas.toDataURL('image/jpeg', quality);
+      const imgWmm = pageW;
+      const imgHmm = canvas.height * imgWmm / canvas.width;
+
+      let heightLeft = imgHmm;
+      let position = 0;
+      pdf.addImage(imgData, 'JPEG', 0, position, imgWmm, imgHmm, undefined, 'FAST');
+      heightLeft -= pageH;
+
+      while(heightLeft > 0){
+        position = heightLeft - imgHmm;
+        pdf.addPage();
+        pdf.addImage(imgData, 'JPEG', 0, position, imgWmm, imgHmm, undefined, 'FAST');
+        heightLeft -= pageH;
+      }
+      return pdf;
+    }
+
+    // Try progressively lower quality until the file is a sensible size to email/share.
+    const TARGET_BYTES = 8 * 1024 * 1024; // 8 MB
+    const qualitySteps = [0.9, 0.75, 0.6, 0.45];
+    let finalPdf = null, finalBlob = null;
+    for(let i=0;i<qualitySteps.length;i++){
+      const candidate = buildAt(qualitySteps[i]);
+      const blob = candidate.output('blob');
+      finalPdf = candidate; finalBlob = blob;
+      if(blob.size <= TARGET_BYTES || i === qualitySteps.length-1) break;
+    }
+
+    const dateStr = new Date().toISOString().slice(0,10);
+    const filename = `parkrun-dashboard-${dateStr}.pdf`;
+    const url = URL.createObjectURL(finalBlob);
+    const a = document.createElement('a');
+    a.href = url; a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(()=> URL.revokeObjectURL(url), 4000);
+
+    const sizeMB = (finalBlob.size / (1024*1024)).toFixed(finalBlob.size < 1024*1024 ? 2 : 1);
+    setPdfStatus(`PDF downloaded (${sizeMB} MB).`, 'ok');
+  }catch(err){
+    console.error('PDF export failed:', err);
+    setPdfStatus('Could not generate the PDF: ' + err.message, 'err');
+  }finally{
+    document.body.classList.remove('pdf-capturing');
+    btn.disabled = false;
+    btn.innerHTML = originalHTML;
+  }
+});
+
+/* ===================== INIT ===================== */
+renderAll(RAW_DATA);
+</script>
+</body>
+</html>
